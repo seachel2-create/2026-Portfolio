@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Kamiwaza Pulse · Concept by Chelsea Hallford</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;12..96,500;12..96,600;12..96,700&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#faf8f4;--paper-2:#f3efe7;--card:#fff;--ink:#191510;--ink-2:#4a443b;--muted:#8a8172;
+    --line:#e7e0d4;--accent:#0f6b5c;--accent-soft:#e4f0ec;--gold:#a9803f;
+    --green:#0f6b5c;--amber:#c98a2b;--red:#c0473f;
+    --shadow:0 1px 2px rgba(25,21,16,.04),0 12px 32px rgba(25,21,16,.06);
+  }
+  *{box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Inter',-apple-system,sans-serif;line-height:1.6;-webkit-font-smoothing:antialiased}
+  h1,h2,h3,h4{font-family:'Bricolage Grotesque',-apple-system,'Segoe UI',sans-serif;font-weight:600;line-height:1.08;letter-spacing:-.02em;margin:0}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 28px}
+
+  nav{position:sticky;top:0;z-index:60;background:rgba(250,248,244,.85);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav .wrap{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .back{font-size:14px;font-weight:600;color:var(--ink-2);display:inline-flex;gap:8px;align-items:center}
+  .back:hover{color:var(--accent)}
+  .logo{font-family:'Bricolage Grotesque',sans-serif;font-size:17px;font-weight:600}
+  .logo b{color:var(--accent)}
+
+  .hero{padding:74px 0 40px;text-align:center}
+  .badge{display:inline-flex;align-items:center;gap:9px;font-size:13px;font-weight:600;color:var(--accent);
+    background:var(--accent-soft);padding:6px 14px;border-radius:999px;margin-bottom:24px}
+  .hero h1{font-size:clamp(40px,7vw,72px);letter-spacing:-.02em}
+  .hero h1 .k{font-style:normal;color:var(--accent)}
+  .hero .tag{font-size:clamp(17px,2.2vw,22px);color:var(--ink-2);max-width:56ch;margin:22px auto 0}
+  .hero .vs{display:inline-block;margin-top:22px;font-size:14px;color:var(--muted)}
+  .hero .vs b{color:var(--ink);font-weight:600}
+
+  section{padding:62px 0}
+  .kicker{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--gold)}
+  .sec h2{font-size:clamp(26px,4vw,40px);margin:12px 0 0}
+  .sec .lede{color:var(--ink-2);font-size:16.5px;max-width:64ch;margin-top:14px}
+
+  /* comparison */
+  .compare{background:var(--paper-2);border-top:1px solid var(--line);border-bottom:1px solid var(--line)}
+  .ctable{display:grid;grid-template-columns:1.3fr 1fr 1fr;gap:0;margin-top:34px;background:var(--card);
+    border:1px solid var(--line);border-radius:18px;overflow:hidden;box-shadow:var(--shadow)}
+  .ctable .cc{padding:16px 20px;border-bottom:1px solid var(--line);font-size:14.5px;display:flex;align-items:center}
+  .ctable .head{font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.05em;background:var(--paper-2)}
+  .ctable .head.kam{color:var(--accent)}
+  .ctable .feat{color:var(--ink-2)}
+  .ctable .kam{background:rgba(15,107,92,.04);font-weight:500}
+  .ctable .tiny{color:var(--muted)}
+  .yes{color:var(--green);font-weight:700}.no{color:var(--red)}
+  @media(max-width:720px){.ctable{font-size:13px}.ctable .cc{padding:12px}}
+
+  /* pillars */
+  .pillars{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px}
+  .pillar{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:var(--shadow)}
+  .pillar .ic{width:44px;height:44px;border-radius:12px;background:var(--accent-soft);color:var(--accent);
+    display:flex;align-items:center;justify-content:center;font-size:22px;margin-bottom:16px}
+  .pillar h3{font-size:20px;margin-bottom:9px}
+  .pillar p{color:var(--ink-2);font-size:14.5px;margin:0}
+  @media(max-width:820px){.pillars{grid-template-columns:1fr}}
+
+  /* mock product */
+  .mock{background:#12312c;border-radius:22px;padding:26px;box-shadow:0 24px 60px rgba(18,49,44,.35);margin-top:38px;color:#e8f4f0}
+  .mock-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:20px}
+  .mock-top .t{font-family:'Bricolage Grotesque',sans-serif;font-size:18px;font-weight:600}
+  .mock-top .live{font-size:11px;font-weight:700;color:#7fe3c8;display:inline-flex;align-items:center;gap:6px}
+  .mock-top .live .d{width:7px;height:7px;border-radius:50%;background:#7fe3c8}
+  .mock-grid{display:grid;grid-template-columns:1.1fr 1fr 1fr;gap:14px}
+  .mcard{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:16px}
+  .mcard .lbl{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#8fb8ae;margin-bottom:10px}
+  .mcard .big{font-family:'Bricolage Grotesque',sans-serif;font-size:40px;font-weight:600;line-height:1}
+  .mcard .sub{font-size:12px;color:#9dc4bb;margin-top:6px}
+  .gaugebar{height:8px;background:rgba(255,255,255,.12);border-radius:5px;margin-top:12px;overflow:hidden}
+  .gaugebar > i{display:block;height:100%;border-radius:5px}
+  .theme{display:flex;justify-content:space-between;font-size:12.5px;padding:6px 0;border-bottom:1px solid rgba(255,255,255,.08)}
+  .theme:last-child{border-bottom:0}
+  .theme .up{color:#7fe3c8}.theme .dn{color:#ff9d94}
+  .kudo{background:rgba(127,227,200,.1);border-left:2px solid #7fe3c8;border-radius:8px;padding:9px 11px;font-size:12px;margin-bottom:8px;line-height:1.4}
+  .kudo b{color:#bff0e2}
+  @media(max-width:820px){.mock-grid{grid-template-columns:1fr}}
+
+  /* flow */
+  .flow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;margin-top:36px}
+  .step{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:22px;box-shadow:var(--shadow);position:relative}
+  .step .num{font-family:'Bricolage Grotesque',sans-serif;font-size:15px;font-weight:700;color:#fff;background:var(--accent);
+    width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .step h4{font-size:17px;margin-bottom:7px}
+  .step p{color:var(--ink-2);font-size:13.5px;margin:0}
+  @media(max-width:820px){.flow{grid-template-columns:1fr 1fr}}
+  @media(max-width:480px){.flow{grid-template-columns:1fr}}
+
+  .cta-band{text-align:center}
+  .cta-band h2{font-size:clamp(28px,4.5vw,44px);max-width:18ch;margin:0 auto 16px}
+  .cta-band h2 em{font-style:normal;color:var(--accent)}
+  .cta-band p{color:var(--ink-2);max-width:52ch;margin:0 auto 26px;font-size:16.5px}
+  .btn{display:inline-flex;align-items:center;gap:8px;font-size:14px;font-weight:600;padding:11px 20px;border-radius:999px;cursor:pointer;transition:.18s}
+  .btn.primary{background:var(--accent);color:#fff}.btn.primary:hover{background:#0c5648;transform:translateY(-1px)}
+  .btn.ghost{border:1px solid var(--line);background:#fff;color:var(--ink)}.btn.ghost:hover{border-color:var(--accent);color:var(--accent)}
+
+  footer{border-top:1px solid var(--line);padding:30px 0;color:var(--muted);font-size:13.5px;text-align:center}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="wrap">
+    <a href="index.html" class="back">← Back to portfolio</a>
+    <span class="logo">Chelsea Hallford<b>.</b></span>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="wrap">
+    <span class="badge">● Product concept</span>
+    <h1>Kamiwaza <span class="k">Pulse</span></h1>
+    <p class="tag">A real-time employee sentiment system that tells you <b>why</b> morale is moving — not just that it is. Built to make the weakest part of TinyPulse its best feature.</p>
+    <div class="vs"><b>The pitch:</b> pulse surveys people actually answer, themes synthesized by AI, and a kudos wall that hands your CEO their All-Hands shout-outs.</div>
+  </div>
+</header>
+
+<section class="compare sec">
+  <div class="wrap">
+    <div class="kicker">Why it beats the incumbent</div>
+    <h2>TinyPulse tells you the score. Pulse tells you the story.</h2>
+    <p class="lede">Legacy pulse tools collect ratings and hand you a dashboard of numbers. The gap is always the same: leaders see sentiment drop but not the reason, and by the time it surfaces it's already attrition. Pulse closes that loop.</p>
+    <div class="ctable">
+      <div class="cc head feat">Capability</div>
+      <div class="cc head kam">Kamiwaza Pulse</div>
+      <div class="cc head tiny">Legacy (TinyPulse)</div>
+
+      <div class="cc feat">Response cadence</div>
+      <div class="cc kam">Micro-pulses tied to the weekly operating rhythm</div>
+      <div class="cc tiny">Fixed weekly survey, survey fatigue</div>
+
+      <div class="cc feat">Insight from open text</div>
+      <div class="cc kam"><span class="yes">AI-synthesized themes</span> + sentiment drivers</div>
+      <div class="cc tiny">Raw comments to read manually</div>
+
+      <div class="cc feat">Early-warning signals</div>
+      <div class="cc kam">Flags a team trending down <b>before</b> attrition</div>
+      <div class="cc tiny">Lagging trend charts</div>
+
+      <div class="cc feat">Manager action</div>
+      <div class="cc kam">Targeted nudges with suggested next steps</div>
+      <div class="cc tiny">Leaves interpretation to the manager</div>
+
+      <div class="cc feat">Recognition loop</div>
+      <div class="cc kam"><span class="yes">Kudos wall</span> feeding CEO All-Hands shout-outs</div>
+      <div class="cc tiny">Separate "Cheers" feed, siloed</div>
+
+      <div class="cc feat">Anonymity & trust</div>
+      <div class="cc kam">True anonymity with theme-level (not quote-level) reporting</div>
+      <div class="cc tiny">Comments can feel identifiable</div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="kicker">How it works</div>
+    <h2>Three things it does that the others don't.</h2>
+    <div class="pillars">
+      <div class="pillar">
+        <div class="ic">◐</div>
+        <h3>Themes, not just scores</h3>
+        <p>Every open response is clustered into named themes — "workload," "clarity of priorities," "recognition" — with a sentiment driver and a direction. You read five themes instead of 200 comments.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">↗</div>
+        <h3>Early warning, per team</h3>
+        <p>Pulse watches slope, not snapshots. When a team's sentiment trends down two cycles in a row, it flags the manager and the CoS with the likely driver — while it's still fixable.</p>
+      </div>
+      <div class="pillar">
+        <div class="ic">✦</div>
+        <h3>Recognition that surfaces up</h3>
+        <p>Peer kudos roll into a live wall. Each week the top moments are packaged for the CEO to read aloud at All-Hands — closing the loop between what teams feel and what leadership celebrates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="compare sec">
+  <div class="wrap">
+    <div class="kicker">The product</div>
+    <h2>What leadership sees.</h2>
+    <div class="mock">
+      <div class="mock-top">
+        <div class="t">Kamiwaza Pulse · Company view</div>
+        <div class="live"><span class="d"></span> Live · updated this morning</div>
+      </div>
+      <div class="mock-grid">
+        <div class="mcard">
+          <div class="lbl">Engagement index</div>
+          <div class="big">78<span style="font-size:18px;color:#9dc4bb">/100</span></div>
+          <div class="gaugebar"><i style="width:78%;background:#7fe3c8"></i></div>
+          <div class="sub">▲ 3 pts · 91% participation</div>
+        </div>
+        <div class="mcard">
+          <div class="lbl">Themes trending</div>
+          <div class="theme"><span>Recognition</span><span class="up">▲ strong</span></div>
+          <div class="theme"><span>Role clarity</span><span class="up">▲ improving</span></div>
+          <div class="theme"><span>Workload</span><span class="dn">▼ watch</span></div>
+          <div class="theme"><span>Cross-team handoffs</span><span class="dn">▼ flagged</span></div>
+        </div>
+        <div class="mcard">
+          <div class="lbl">Kudos → All-Hands</div>
+          <div class="kudo"><b>Sarah</b> rebuilt the latency path during live fire testing — on a Saturday.</div>
+          <div class="kudo"><b>Recruiting</b> shipped a principal offer in one week.</div>
+          <div class="kudo"><b>Ops</b> turned the NDA audit from days into hours.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="sec">
+  <div class="wrap">
+    <div class="kicker">The loop</div>
+    <h2>From a 20-second pulse to a leadership decision.</h2>
+    <div class="flow">
+      <div class="step"><div class="num">1</div><h4>Pulse</h4><p>Two questions, 20 seconds, delivered in the tools people already use — timed to the weekly rhythm, not bolted on.</p></div>
+      <div class="step"><div class="num">2</div><h4>Synthesize</h4><p>AI clusters open text into themes with sentiment drivers, protecting anonymity by reporting at the theme level.</p></div>
+      <div class="step"><div class="num">3</div><h4>Signal</h4><p>Managers get targeted nudges; the CoS gets an early-warning view of teams trending down before it becomes attrition.</p></div>
+      <div class="step"><div class="num">4</div><h4>Celebrate</h4><p>Peer kudos surface up into a CEO shout-out packet for All-Hands — recognition that actually reaches the top.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-band sec">
+  <div class="wrap">
+    <h2>Concept and design by <em>Chelsea Hallford.</em></h2>
+    <p>This is the kind of internal product I build as Chief of Staff — spotting where an off-the-shelf tool falls short and designing the system that replaces it.</p>
+    <div style="display:flex;gap:14px;justify-content:center;flex-wrap:wrap">
+      <a href="index.html" class="btn ghost">← Back to portfolio</a>
+      <a href="ceo-ops-dashboard.html" class="btn primary" target="_blank">See the CEO Ops Dashboard →</a>
+    </div>
+  </div>
+</section>
+
+<footer>© 2026 Chelsea Hallford · Kamiwaza Pulse is a product concept</footer>
+</body>
+</html>

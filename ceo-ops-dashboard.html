@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>CEO Operations Dashboard</title>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+<style>
+  :root{
+    --bg:#0e1525;
+    --panel:#16203a;
+    --panel-2:#1b2746;
+    --line:#26324f;
+    --txt:#e8edf7;
+    --muted:#8a98b8;
+    --muted-2:#5d6b8c;
+    --green:#27d796;
+    --green-dim:#1d9c6e;
+    --red:#ff5c7a;
+    --amber:#ffc24b;
+    --blue:#4d9fff;
+    --purple:#a98bff;
+    --teal:#2fd3d8;
+    --radius:14px;
+    --shadow:0 1px 0 rgba(255,255,255,.03) inset, 0 6px 18px rgba(0,0,0,.25);
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bg);
+    color:var(--txt);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Inter,Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+
+  /* ---------- Password gate ---------- */
+  #gate{
+    position:fixed;inset:0;z-index:1000;
+    background:radial-gradient(1200px 600px at 50% -10%, #1a2747 0%, #0e1525 60%);
+    display:flex;align-items:center;justify-content:center;
+  }
+  .gate-card{
+    width:360px;background:var(--panel);border:1px solid var(--line);
+    border-radius:18px;padding:34px 30px;box-shadow:var(--shadow);text-align:center;
+  }
+  .gate-card h1{font-size:18px;margin:0 0 4px}
+  .gate-card p{color:var(--muted);font-size:13px;margin:0 0 22px}
+  .gate-card input{
+    width:100%;padding:12px 14px;border-radius:10px;border:1px solid var(--line);
+    background:#0f1830;color:var(--txt);font-size:15px;outline:none;text-align:center;letter-spacing:2px;
+  }
+  .gate-card input:focus{border-color:var(--blue)}
+  .pw-wrap{position:relative;display:flex;align-items:center}
+  .pw-wrap input{padding-right:46px}
+  .gate-card .pw-toggle{position:absolute;right:8px;top:50%;transform:translateY(-50%);
+    margin:0;width:30px;height:30px;padding:0;border:0;border-radius:7px;
+    background:transparent;color:var(--muted);cursor:pointer;
+    display:flex;align-items:center;justify-content:center;line-height:0;font-weight:400}
+  .gate-card .pw-toggle:hover{color:var(--txt);background:rgba(255,255,255,.05)}
+  .gate-card .pw-toggle svg{width:18px;height:18px;display:block}
+  .gate-card button{
+    margin-top:14px;width:100%;padding:12px;border-radius:10px;border:0;cursor:pointer;
+    background:var(--green);color:#04130d;font-weight:700;font-size:14px;
+  }
+  .gate-err{color:var(--red);font-size:12px;height:16px;margin-top:10px}
+  .logo-dot{width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--green),var(--teal));
+    margin:0 auto 16px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#04130d}
+
+  /* ---------- Shell ---------- */
+  #app{display:block}
+  .demo-banner{background:rgba(255,194,75,.13);border-bottom:1px solid rgba(255,194,75,.28);
+    color:var(--amber);font-size:12.5px;font-weight:600;text-align:center;padding:9px 16px;letter-spacing:.2px}
+  .demo-banner b{color:#ffd681}
+  /* decisions dropdown */
+  details.drop{margin-top:10px}
+  details.drop summary{list-style:none;cursor:pointer;font-size:12px;color:var(--blue);font-weight:700}
+  details.drop summary::-webkit-details-marker{display:none}
+  details.drop[open] summary{color:var(--muted)}
+  .drop-body{margin-top:10px}
+  .drop-item{padding:8px 0;border-bottom:1px solid rgba(38,50,79,.5)}
+  .drop-item:last-child{border-bottom:0}
+  .di-top{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:12px}
+  .di-top b{font-weight:700}
+  .di-sub{color:var(--muted);margin-top:3px;line-height:1.45;font-size:11.5px}
+  /* generic hover tooltip wrapper */
+  .tipwrap{position:relative;cursor:help}
+  .tipwrap .tip{visibility:hidden;opacity:0;position:absolute;z-index:95;bottom:125%;left:0;
+    width:250px;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;
+    background:#0a1430;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-size:11.5px;color:var(--txt);line-height:1.55;font-weight:400;text-align:left;text-transform:none;letter-spacing:0;
+    box-shadow:0 12px 32px rgba(0,0,0,.55);transition:.15s}
+  .tipwrap .tip b{display:block;margin-bottom:4px;color:var(--amber)}
+  .tipwrap:hover .tip{visibility:visible;opacity:1}
+  header.topbar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:16px 26px;border-bottom:1px solid var(--line);
+    position:sticky;top:0;background:rgba(14,21,37,.85);backdrop-filter:blur(8px);z-index:50;
+  }
+  .brand{display:flex;align-items:center;gap:12px}
+  .backlink{color:var(--txt);font-size:13px;font-weight:700;text-decoration:none;white-space:nowrap;
+    background:linear-gradient(135deg,var(--green),var(--teal));color:#04130d;
+    padding:8px 14px;border-radius:999px;display:inline-flex;align-items:center;gap:6px;
+    box-shadow:0 2px 8px rgba(39,215,150,.25);transition:.15s}
+  .backlink:hover{transform:translateY(-1px);box-shadow:0 4px 14px rgba(39,215,150,.4)}
+  .brand .mark{width:30px;height:30px;border-radius:8px;background:linear-gradient(135deg,var(--green),var(--teal));
+    display:flex;align-items:center;justify-content:center;font-weight:800;color:#04130d;font-size:15px}
+  .brand h1{font-size:15px;margin:0;font-weight:700}
+  .brand .sub{font-size:11px;color:var(--muted-2)}
+  .topbar .meta{font-size:12px;color:var(--muted);text-align:right}
+  .topbar .meta b{color:var(--txt)}
+
+  nav.tabs{display:flex;gap:4px;padding:10px 22px 0;border-bottom:1px solid var(--line);
+    position:sticky;top:63px;background:var(--bg);z-index:40;overflow-x:auto}
+  nav.tabs button{
+    background:transparent;border:0;color:var(--muted);padding:11px 16px;font-size:13px;
+    cursor:pointer;border-bottom:2px solid transparent;font-weight:600;white-space:nowrap;
+  }
+  nav.tabs button:hover{color:var(--txt)}
+  nav.tabs button.active{color:var(--txt);border-bottom-color:var(--green)}
+
+  main{padding:22px 26px 60px;max-width:1480px;margin:0 auto}
+  .view{display:none;animation:fade .25s ease}
+  .view.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
+
+  .grid{display:grid;gap:16px}
+  .g-12{grid-template-columns:repeat(12,1fr)}
+  @media(max-width:900px){.g-12{grid-template-columns:repeat(2,1fr)}}
+
+  .card{
+    background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:18px 18px 16px;box-shadow:var(--shadow);min-width:0;
+  }
+  .card .ttl{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.6px;font-weight:700;margin-bottom:12px;display:flex;justify-content:space-between;align-items:center}
+  .big{font-size:40px;font-weight:800;letter-spacing:-1px;line-height:1}
+  .big.sm{font-size:30px}
+  .unit{font-size:16px;color:var(--muted);font-weight:600}
+  .delta{font-size:13px;font-weight:700;margin-top:8px;display:inline-flex;align-items:center;gap:5px}
+  .delta.up{color:var(--green)} .delta.down{color:var(--red)} .delta.flat{color:var(--muted)}
+  .label{font-size:12px;color:var(--muted);margin-top:6px}
+
+  .span2{grid-column:span 2}.span3{grid-column:span 3}.span4{grid-column:span 4}
+  .span5{grid-column:span 5}.span6{grid-column:span 6}.span7{grid-column:span 7}
+  .span8{grid-column:span 8}.span9{grid-column:span 9}.span12{grid-column:span 12}
+  @media(max-width:900px){[class*="span"]{grid-column:span 2 !important}}
+
+  .pill{display:inline-flex;align-items:center;gap:6px;font-size:11px;font-weight:700;
+    padding:3px 9px;border-radius:20px}
+  .pill.g{background:rgba(39,215,150,.14);color:var(--green)}
+  .pill.y{background:rgba(255,194,75,.14);color:var(--amber)}
+  .pill.r{background:rgba(255,92,122,.14);color:var(--red)}
+  .pill.b{background:rgba(77,159,255,.14);color:var(--blue)}
+  .dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+  .dot.g{background:var(--green)}.dot.y{background:var(--amber)}.dot.r{background:var(--red)}.dot.b{background:var(--blue)}
+
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th{text-align:left;color:var(--muted-2);font-weight:600;font-size:11px;text-transform:uppercase;
+    letter-spacing:.5px;padding:6px 8px;border-bottom:1px solid var(--line)}
+  td{padding:9px 8px;border-bottom:1px solid rgba(38,50,79,.5);color:var(--txt)}
+  tr:last-child td{border-bottom:0}
+  td.num{text-align:right;font-variant-numeric:tabular-nums}
+  th.num{text-align:right}
+
+  /* tooltip */
+  .has-tip{position:relative;cursor:help;border-bottom:1px dotted var(--muted-2)}
+  .has-tip .tip{
+    visibility:hidden;opacity:0;position:absolute;z-index:80;bottom:130%;left:0;
+    width:280px;background:#0a1430;border:1px solid var(--line);
+    border-radius:10px;padding:11px 13px;font-size:12px;color:var(--txt);line-height:1.5;
+    box-shadow:0 10px 30px rgba(0,0,0,.5);transition:.15s;font-weight:400;text-transform:none;letter-spacing:0}
+  .has-tip .tip b{color:var(--amber)}
+  .has-tip:hover .tip{visibility:visible;opacity:1}
+  .has-tip .tip::after{content:"";position:absolute;top:100%;left:18px;border:6px solid transparent;border-top-color:#0a1430}
+
+  .bar-track{height:8px;background:#0f1830;border-radius:6px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:6px}
+
+  .kv{display:flex;justify-content:space-between;font-size:13px;padding:7px 0;border-bottom:1px solid rgba(38,50,79,.5)}
+  .kv:last-child{border-bottom:0}
+  .kv .k{color:var(--muted)}
+  .chart-wrap{position:relative;height:200px}
+  .chart-wrap.tall{height:240px}
+  .gauge-wrap{position:relative;height:150px}
+
+  .funnel-row{display:flex;align-items:center;gap:12px;margin-bottom:9px}
+  .funnel-bar{height:30px;border-radius:6px;display:flex;align-items:center;padding-left:12px;
+    font-size:12px;font-weight:700;color:#04130d;white-space:nowrap}
+  .funnel-meta{font-size:12px;color:var(--muted);width:120px;text-align:right;flex-shrink:0}
+
+  .kudos{background:var(--panel-2);border-radius:10px;padding:12px 14px;margin-bottom:10px;border-left:3px solid var(--green)}
+  .kudos .from{font-size:12px;color:var(--muted);margin-bottom:4px}
+  .kudos .from b{color:var(--txt)}
+  .kudos .txt{font-size:13px;line-height:1.5}
+  .kudos.praise{border-left-color:var(--amber)}
+
+  .seg{display:flex;gap:3px;height:8px;border-radius:6px;overflow:hidden;margin-top:8px}
+  .seg > span{display:block}
+
+  .rec{font-size:12px;font-weight:700;padding:4px 10px;border-radius:7px;display:inline-block}
+  .rec.yes{background:rgba(39,215,150,.16);color:var(--green)}
+  .rec.no{background:rgba(255,92,122,.16);color:var(--red)}
+  .rec.maybe{background:rgba(255,194,75,.16);color:var(--amber)}
+
+  .scorebar{display:flex;align-items:baseline;gap:10px}
+  .health-num{font-size:30px;font-weight:800}
+  .mini{font-size:11px;color:var(--muted-2);margin-top:2px}
+  .foot{text-align:center;color:var(--muted-2);font-size:11px;padding:24px 0 0}
+
+  /* ---------- Breadcrumb / back ---------- */
+  .crumb{display:flex;align-items:center;gap:10px;font-size:13px;margin:0 0 18px}
+  .crumb a{color:var(--green);font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:7px;
+    background:rgba(39,215,150,.1);border:1px solid rgba(39,215,150,.22);padding:7px 13px;border-radius:9px;transition:.15s}
+  .crumb a:hover{background:rgba(39,215,150,.2);transform:translateX(-2px)}
+  .crumb-sep{color:var(--muted-2)}
+  .crumb #crumbNow{color:var(--txt);font-weight:600}
+
+  /* ---------- Portal home ---------- */
+  .portal-intro{margin:4px 2px 20px}
+  .portal-intro h2{font-size:22px;margin:0 0 6px;font-weight:800;letter-spacing:-.5px}
+  .portal-intro p{color:var(--muted);font-size:13.5px;margin:0}
+  .portal-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+  @media(max-width:1000px){.portal-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.portal-grid{grid-template-columns:1fr}}
+  .ptile{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px;
+    cursor:pointer;transition:.2s;box-shadow:var(--shadow);position:relative;overflow:hidden;display:flex;flex-direction:column;min-height:190px}
+  .ptile:hover{transform:translateY(-4px);border-color:var(--green-dim);box-shadow:0 10px 30px rgba(0,0,0,.35)}
+  .ptile-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+  .pt-ic{width:38px;height:38px;border-radius:10px;display:flex;align-items:center;justify-content:center;
+    font-size:18px;background:rgba(39,215,150,.12);color:var(--green)}
+  .pt-arrow{color:var(--muted-2);font-size:18px;transition:.2s}
+  .ptile:hover .pt-arrow{color:var(--green);transform:translateX(3px)}
+  .ptile h3{font-size:17px;margin:0 0 5px;font-weight:700}
+  .ptile .pt-desc{font-size:12.5px;color:var(--muted);line-height:1.45;flex:1;margin-bottom:14px}
+  .pt-stats{display:flex;gap:16px;border-top:1px solid var(--line);padding-top:13px}
+  .pt-stat{display:flex;flex-direction:column}
+  .pt-stat b{font-size:20px;font-weight:800;line-height:1;letter-spacing:-.5px}
+  .pt-stat span{font-size:10.5px;color:var(--muted-2);margin-top:4px;text-transform:uppercase;letter-spacing:.4px}
+  .pt-seg{display:flex;gap:2px;height:6px;border-radius:4px;overflow:hidden;margin-top:12px}
+  .pt-seg > i{display:block}
+
+  /* dependency matrix */
+  .matrix{border-collapse:separate;border-spacing:4px;width:100%}
+  .matrix th{font-size:11px;color:var(--muted);padding:4px 2px;text-align:center;border:0;text-transform:none;letter-spacing:0}
+  .matrix th.row-h{text-align:right;padding-right:8px;font-weight:700;color:var(--txt)}
+  .matrix td{padding:0;border:0}
+  .cell{height:34px;border-radius:7px;display:flex;align-items:center;justify-content:center;
+    font-size:11px;font-weight:700;position:relative;cursor:default}
+  .cell.g{background:rgba(39,215,150,.18);color:var(--green)}
+  .cell.y{background:rgba(255,194,75,.18);color:var(--amber);cursor:help}
+  .cell.r{background:rgba(255,92,122,.20);color:var(--red);cursor:help}
+  .cell.self{background:repeating-linear-gradient(45deg,#141d33,#141d33 5px,#16203a 5px,#16203a 10px)}
+  .cell .tip{
+    visibility:hidden;opacity:0;position:absolute;z-index:90;bottom:130%;left:50%;transform:translateX(-50%);
+    width:220px;box-sizing:border-box;white-space:normal;overflow-wrap:break-word;
+    background:#0a1430;border:1px solid var(--line);border-radius:10px;padding:10px 12px;
+    font-size:11.5px;color:var(--txt);line-height:1.5;font-weight:400;text-align:left;
+    box-shadow:0 12px 32px rgba(0,0,0,.55);transition:.15s}
+  .cell .tip b{display:block;margin-bottom:3px;color:var(--amber)}
+  .cell.r .tip b{color:var(--red)}
+  .cell:hover .tip{visibility:visible;opacity:1}
+  .legend{display:flex;gap:16px;font-size:11px;color:var(--muted);margin-top:10px;flex-wrap:wrap}
+  .legend span{display:inline-flex;align-items:center;gap:6px}
+
+  /* people grid */
+  .people-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+  @media(max-width:1200px){.people-grid{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:640px){.people-grid{grid-template-columns:1fr}}
+  .person{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);
+    padding:16px;box-shadow:var(--shadow)}
+  .person-hd{display:flex;align-items:center;gap:10px;margin-bottom:4px}
+  .avatar{width:34px;height:34px;border-radius:9px;display:flex;align-items:center;justify-content:center;
+    font-weight:800;color:#04130d;font-size:14px;flex-shrink:0}
+  .person-hd .nm{font-size:14px;font-weight:700;line-height:1.1}
+  .person-hd .fn{font-size:11px;color:var(--muted-2)}
+  .person-summary{display:flex;gap:5px;margin:8px 0 12px}
+  .person-summary .seg2{flex:1;height:6px;border-radius:4px}
+  .proj{display:flex;align-items:flex-start;justify-content:space-between;gap:8px;
+    padding:9px 0;border-bottom:1px solid rgba(38,50,79,.5)}
+  .proj:last-child{border-bottom:0}
+  .proj .pname{font-size:12.5px;line-height:1.3;color:var(--txt)}
+  .proj .pnum{font-size:10px;color:var(--muted-2);margin-top:2px}
+  .chip{display:inline-flex;align-items:center;gap:5px;font-size:10px;font-weight:700;
+    padding:3px 8px;border-radius:20px;white-space:nowrap;flex-shrink:0}
+  .chip.g{background:rgba(39,215,150,.14);color:var(--green)}
+  .chip.y{background:rgba(255,194,75,.14);color:var(--amber);cursor:help}
+  .chip.r{background:rgba(255,92,122,.14);color:var(--red);cursor:help}
+  .chip .tip{
+    visibility:hidden;opacity:0;position:absolute;z-index:90;bottom:135%;right:0;
+    width:230px;max-width:230px;box-sizing:border-box;
+    white-space:normal;word-break:normal;overflow-wrap:break-word;hyphens:auto;
+    background:#0a1430;border:1px solid var(--line);border-radius:10px;
+    padding:11px 13px;font-size:11.5px;color:var(--txt);line-height:1.5;font-weight:400;text-align:left;
+    box-shadow:0 12px 32px rgba(0,0,0,.55);transition:.15s}
+  .chip .tip b{display:block;margin-bottom:3px}
+  .chip .tip b{color:var(--amber)}
+  .chip.r .tip b{color:var(--red)}
+  .chip{position:relative}
+  .chip:hover .tip{visibility:visible;opacity:1}
+</style>
+</head>
+<body>
+
+<!-- ============ APP ============ -->
+<div id="app">
+  <div class="demo-banner">⚠️ Sample dashboard — every figure below is <b>illustrative placeholder data</b>, not live company data. Built to demonstrate the design.</div>
+  <header class="topbar">
+    <div class="brand">
+      <a href="index.html#work" class="backlink">← Back to Portfolio</a>
+      <div class="mark" style="cursor:pointer" onclick="openView('portal')" title="Portal Home">N</div>
+      <div style="cursor:pointer" onclick="openView('portal')" title="Portal Home">
+        <h1>CEO Operations Dashboard</h1>
+        <div class="sub">Company operating system · Chief of Staff</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div>Week of <b>Jun 1–5, 2026</b> · Q2 FY26</div>
+      <div><b style="color:var(--amber)">Sample / demo data</b> · not live</div>
+    </div>
+  </header>
+
+  <nav class="tabs" id="tabs">
+    <button class="active" data-v="portal">⌂ Portal Home</button>
+    <button data-v="projects">Top Projects</button>
+    <button data-v="sales">Sales Pipeline</button>
+    <button data-v="events">Events</button>
+    <button data-v="hiring">Hiring &amp; Culture</button>
+    <button data-v="partners">Partnerships</button>
+    <button data-v="alignment">Cross-Functional Alignment</button>
+  </nav>
+
+  <main>
+    <div id="crumb" class="crumb" style="display:none">
+      <a onclick="openView('portal')">← All dashboards · Portal Home</a>
+      <span class="crumb-sep">›</span>
+      <span id="crumbNow"></span>
+    </div>
+
+    <!-- ============================ PORTAL HOME ============================ -->
+    <section class="view active" id="portal">
+      <div class="portal-intro">
+        <h2>CEO Operations Portal</h2>
+        <p>Your company at a glance. Click any tile to open the full dashboard for that area.</p>
+      </div>
+      <div class="portal-grid">
+        <div class="ptile" onclick="openView('projects')">
+          <div class="ptile-top"><span class="pt-ic">▣</span><span class="pt-arrow">→</span></div>
+          <h3>Top Projects</h3>
+          <div class="pt-desc">Company &amp; per-person project health, parsed from the Friday 5T5s.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b style="color:var(--amber)">76</b><span>Health</span></div>
+            <div class="pt-stat"><b style="color:var(--red)">3</b><span>Slipping</span></div>
+            <div class="pt-stat"><b>25</b><span>Projects</span></div>
+          </div>
+        </div>
+        <div class="ptile" onclick="openView('sales')">
+          <div class="ptile-top"><span class="pt-ic">$</span><span class="pt-arrow">→</span></div>
+          <h3>Sales Pipeline</h3>
+          <div class="pt-desc">Pipeline by stage, data hygiene, and goal-vs-actual by quarter.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b>$4.8M</b><span>Open</span></div>
+            <div class="pt-stat"><b style="color:var(--green)">$840K</b><span>Won QTD</span></div>
+            <div class="pt-stat"><b style="color:var(--amber)">82%</b><span>Hygiene</span></div>
+          </div>
+        </div>
+        <div class="ptile" onclick="openView('events')">
+          <div class="ptile-top"><span class="pt-ic">◎</span><span class="pt-arrow">→</span></div>
+          <h3>Events</h3>
+          <div class="pt-desc">ROI, attendance, and a clear "run it again?" verdict per event.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b style="color:var(--green)">3.4x</b><span>ROI</span></div>
+            <div class="pt-stat"><b>$1.9M</b><span>Sourced</span></div>
+            <div class="pt-stat"><b>9</b><span>Events</span></div>
+          </div>
+        </div>
+        <div class="ptile" onclick="openView('hiring')">
+          <div class="ptile-top"><span class="pt-ic">✦</span><span class="pt-arrow">→</span></div>
+          <h3>Hiring &amp; Culture</h3>
+          <div class="pt-desc">Hiring health by department, retention, and the culture kudos wall.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b>14</b><span>Open roles</span></div>
+            <div class="pt-stat"><b style="color:var(--green)">27d</b><span>To offer</span></div>
+            <div class="pt-stat"><b>93%</b><span>Retention</span></div>
+          </div>
+        </div>
+        <div class="ptile" onclick="openView('partners')">
+          <div class="ptile-top"><span class="pt-ic">⬡</span><span class="pt-arrow">→</span></div>
+          <h3>Partnerships</h3>
+          <div class="pt-desc">Partner health, onboarding time-to-first-deal, and top deals.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b>12</b><span>Partners</span></div>
+            <div class="pt-stat"><b style="color:var(--green)">$2.3M</b><span>Sourced</span></div>
+            <div class="pt-stat"><b style="color:var(--red)">2</b><span>At risk</span></div>
+          </div>
+        </div>
+        <div class="ptile" onclick="openView('alignment')">
+          <div class="ptile-top"><span class="pt-ic">⇄</span><span class="pt-arrow">→</span></div>
+          <h3>Cross-Functional Alignment</h3>
+          <div class="pt-desc">Dependencies, slippage, and handoff health across teams.</div>
+          <div class="pt-stats">
+            <div class="pt-stat"><b style="color:var(--amber)">79</b><span>Alignment</span></div>
+            <div class="pt-stat"><b style="color:var(--red)">7</b><span>Blocked</span></div>
+            <div class="pt-stat"><b>6.2d</b><span>Avg slip</span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ PROJECTS ============================ -->
+    <section class="view" id="projects">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Company project health</div>
+          <div class="scorebar"><div class="health-num" style="color:var(--amber)">76<span class="unit">/100</span></div></div>
+          <div class="seg">
+            <span style="flex:16;background:var(--green)"></span>
+            <span style="flex:6;background:var(--amber)"></span>
+            <span class="tipwrap" style="flex:3;background:var(--red)"><span class="tip"><b>3 slipping (red):</b>• <b style="display:inline;color:var(--txt)">Brad — SSO/SCIM:</b> vendor integration stalled, no clear owner.<br>• <b style="display:inline;color:var(--txt)">Priya — Detection model eval:</b> off-brief, in observation window.<br>• <b style="display:inline;color:var(--txt)">Dana — Website relaunch:</b> agency missed deadlines, ~3 wks behind.</span></span>
+          </div>
+          <div class="mini">16 on track · 6 at risk · <span class="tipwrap" style="color:var(--red);font-weight:700;border-bottom:1px dotted var(--red)">3 slipping<span class="tip"><b>3 slipping (red):</b>• <b style="display:inline;color:var(--txt)">Brad — SSO/SCIM provisioning:</b> vendor integration stalled and no clear day-to-day owner.<br>• <b style="display:inline;color:var(--txt)">Priya — Detection model eval:</b> deliverables off-brief; owner in a 30–60 day observation window.<br>• <b style="display:inline;color:var(--txt)">Dana — Website relaunch:</b> agency missed two deadlines; ~3 weeks behind.</span></span> · 25 projects</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Big Rocks on track</div>
+          <div class="big">61<span class="unit">%</span></div>
+          <div class="delta down">▼ 9% vs last week</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">5T5 emails in (Fri)</div>
+          <div class="big">7<span class="unit">/8</span></div>
+          <div class="delta flat">Marketing outstanding</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Decisions awaiting Luke</div>
+          <div class="big" style="color:var(--amber)">5</div>
+          <details class="drop">
+            <summary>2 blocking delivery · view all ▾</summary>
+            <div class="drop-body">
+              <div class="drop-item"><div class="di-top"><b>RDMA / HPE infra path</b><span class="pill r">Blocking</span></div><div class="di-sub">Blocks GPU sizing, multi-tenant rollout, and the HPE co-sell.</div></div>
+              <div class="drop-item"><div class="di-top"><b>Multi-tenant rollout DRI</b><span class="pill r">Blocking</span></div><div class="di-sub">Name a directly-responsible owner so Sales municipal deals can progress.</div></div>
+              <div class="drop-item"><div class="di-top"><b>PEO / HRIS vendor</b><span class="pill y">At risk</span></div><div class="di-sub">ADP vs Workday — pick one; it's gating the eng onboarding capacity model.</div></div>
+              <div class="drop-item"><div class="di-top"><b>Website relaunch vendor</b><span class="pill y">At risk</span></div><div class="di-sub">Approve switching agencies; launch is ~3 weeks behind.</div></div>
+              <div class="drop-item"><div class="di-top"><b>Q3 pricing sign-off</b><span class="pill b">Open</span></div><div class="di-sub">Approve pricing model v2 ahead of the SLED push.</div></div>
+            </div>
+          </details>
+        </div>
+
+        <div class="card span8">
+          <div class="ttl">Executed vs slipped, by week <span class="pill b">from Friday 5T5s</span></div>
+          <div class="chart-wrap"><canvas id="execTrend"></canvas></div>
+        </div>
+        <div class="card span4">
+          <div class="ttl">This week, across ELT</div>
+          <div class="kv"><span class="k">✅ Executed</span><span><b>23</b></span></div>
+          <div class="kv"><span class="k">⚠️ Slipped to next week</span><span style="color:var(--amber)"><b>9</b></span></div>
+          <div class="kv"><span class="k">🆕 New on next-week list</span><span><b>17</b></span></div>
+          <div class="kv"><span class="k">🔴 Slipped 2+ weeks</span><span style="color:var(--red)"><b>3</b></span></div>
+          <div class="label" style="margin-top:10px">Auto-parsed from Friday 5T5 emails. Hover any status in the table below for the "why."</div>
+        </div>
+
+        <div class="card span12" style="background:transparent;border:0;box-shadow:none;padding:0">
+          <div class="ttl" style="padding:0 2px">Top 5 projects per person <span style="text-transform:none;color:var(--muted-2);font-weight:500">Hover any yellow or red chip for why it's slipping</span></div>
+          <div class="people-grid" id="peopleGrid"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ SALES ============================ -->
+    <section class="view" id="sales">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Open pipeline</div>
+          <div class="big">$4.82<span class="unit">M</span></div>
+          <div class="delta up">▲ $610K vs last month</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Weighted forecast</div>
+          <div class="big sm">$1.74<span class="unit">M</span></div>
+          <div class="label">3.1x coverage on Q2 gap</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Closed-won QTD</div>
+          <div class="big sm" style="color:var(--green)">$840<span class="unit">K</span></div>
+          <div class="delta up">▲ 4 deals</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">CRM data hygiene</div>
+          <div class="scorebar"><div class="health-num" style="color:var(--amber)">82<span class="unit">%</span></div></div>
+          <div class="seg"><span style="flex:82;background:var(--green)"></span><span style="flex:18;background:var(--red)"></span></div>
+          <div class="mini">11 records need attention</div>
+        </div>
+
+        <div class="card span5">
+          <div class="ttl">Pipeline by stage</div>
+          <div id="funnel"></div>
+        </div>
+
+        <div class="card span4">
+          <div class="ttl">Data hygiene breakdown</div>
+          <div id="hygiene"></div>
+        </div>
+
+        <div class="card span3">
+          <div class="ttl">SLED productized motion</div>
+          <div class="kv"><span class="k">Enterprise baseline</span><b>$200K</b></div>
+          <div class="kv"><span class="k">Add-on node</span><b>$50K</b></div>
+          <div class="kv"><span class="k">Target / municipality</span><b>~$500K/yr</b></div>
+          <div class="kv"><span class="k">Active municipal convos</span><b>6</b></div>
+          <div class="label" style="margin-top:8px">Repeatable playbook off the Vail lighthouse account.</div>
+        </div>
+
+        <div class="card span8">
+          <div class="ttl">Goal vs actual by quarter · new ARR <span style="text-transform:none;color:var(--muted-2);font-weight:500">hover a quarter for its top accounts</span></div>
+          <div class="chart-wrap tall"><canvas id="quarterGoal"></canvas></div>
+        </div>
+        <div class="card span4">
+          <div class="ttl">Full-year pacing</div>
+          <div class="big sm">$3.1<span class="unit">M</span> <span style="font-size:13px;color:var(--muted)">/ $4.0M goal</span></div>
+          <div class="bar-track" style="margin:12px 0 6px"><div class="bar-fill" style="width:78%;background:linear-gradient(90deg,var(--green),var(--teal))"></div></div>
+          <div class="label">Projected landing <b style="color:var(--amber)">78% of plan</b> at current pace.</div>
+          <div class="kv" style="margin-top:10px"><span class="k">Q1</span><span class="pill g">Met · 104%</span></div>
+          <div class="kv"><span class="k">Q2 (in progress)</span><span class="pill y">Pacing 88%</span></div>
+          <div class="kv"><span class="k">Q3 forecast</span><span class="pill y">At risk</span></div>
+          <div class="kv"><span class="k">Q4 forecast</span><span class="pill b">TBD</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ EVENTS ============================ -->
+    <section class="view" id="events">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Events YTD</div>
+          <div class="big">9</div>
+          <div class="label">3 owned · 6 sponsored</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Blended event ROI</div>
+          <div class="big" style="color:var(--green)">3.4<span class="unit">x</span></div>
+          <div class="delta up">▲ pipeline / spend</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Pipeline sourced</div>
+          <div class="big sm">$1.9<span class="unit">M</span></div>
+          <div class="label">$412K closed-won attributed</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Total spend YTD</div>
+          <div class="big sm">$558<span class="unit">K</span></div>
+          <div class="label">Avg $62K / event</div>
+        </div>
+
+        <div class="card span7">
+          <div class="ttl">ROI by event <span style="text-transform:none;color:var(--muted-2);font-weight:500">pipeline sourced ÷ spend · green = run again, amber = re-scope, red = drop</span></div>
+          <div class="chart-wrap tall"><canvas id="eventRoi"></canvas></div>
+        </div>
+        <div class="card span5">
+          <div class="ttl">Attendance vs target</div>
+          <div class="chart-wrap tall"><canvas id="eventAtt"></canvas></div>
+        </div>
+
+        <div class="card span12">
+          <div class="ttl">Event scorecard &amp; "run it again?"</div>
+          <table>
+            <thead><tr>
+              <th>Event</th><th class="num">Spend</th><th class="num">Pipeline</th><th class="num">ROI</th>
+              <th class="num">Attendees</th><th class="num">MQLs</th><th>NPS</th><th>Verdict</th>
+            </tr></thead>
+            <tbody id="eventRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ HIRING ============================ -->
+    <section class="view" id="hiring">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Open roles</div>
+          <div class="big">14</div>
+          <div class="label">5 eng · 3 GTM · others</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Avg time-to-offer (eng)</div>
+          <div class="big sm" style="color:var(--green)">27<span class="unit">d</span></div>
+          <div class="delta up">▲ under 30-day target</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">12-mo retention</div>
+          <div class="big sm">93<span class="unit">%</span></div>
+          <div class="delta up">▲ 2 pts</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Offer accept rate</div>
+          <div class="big sm">86<span class="unit">%</span></div>
+          <div class="label">6 of 7 accepted QTD</div>
+        </div>
+
+        <div class="card span7">
+          <div class="ttl">Hiring health by department</div>
+          <table>
+            <thead><tr><th>Dept</th><th class="num">Open</th><th class="num">In pipe</th><th class="num">TTO</th><th class="num">Retention</th><th>Health</th></tr></thead>
+            <tbody id="hireRows"></tbody>
+          </table>
+        </div>
+        <div class="card span5">
+          <div class="ttl">Headcount growth</div>
+          <div class="chart-wrap tall"><canvas id="hcGrowth"></canvas></div>
+        </div>
+
+        <div class="card span7">
+          <div class="ttl">Funnel · open-to-offer (engineering)</div>
+          <div id="hireFunnel"></div>
+        </div>
+        <div class="card span5">
+          <div class="ttl">🎉 Culture wall — kudos &amp; high praise <span style="text-transform:none;color:var(--muted-2);font-weight:500">for All-Hands shout-outs</span></div>
+          <div id="kudosWall"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ PARTNERS ============================ -->
+    <section class="view" id="partners">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Active partners</div>
+          <div class="big">12</div>
+          <div class="label">4 tech · 5 channel · 3 strategic</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Avg time to first deal</div>
+          <div class="big sm">48<span class="unit">d</span></div>
+          <div class="delta up">▲ down from 71d</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Partner-sourced pipeline</div>
+          <div class="big sm" style="color:var(--green)">$2.3<span class="unit">M</span></div>
+          <div class="label">31% of total open pipe</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Partner health</div>
+          <div class="seg"><span style="flex:7;background:var(--green)"></span><span style="flex:3;background:var(--amber)"></span><span style="flex:2;background:var(--red)"></span></div>
+          <div class="mini">7 healthy · 3 watch · 2 at risk</div>
+        </div>
+
+        <div class="card span7">
+          <div class="ttl">Onboarding → first deal (days)</div>
+          <div class="chart-wrap tall"><canvas id="partnerOnboard"></canvas></div>
+        </div>
+        <div class="card span5">
+          <div class="ttl">Top partner deals</div>
+          <table>
+            <thead><tr><th>Deal</th><th>Partner</th><th class="num">Value</th><th>Stage</th></tr></thead>
+            <tbody id="dealRows"></tbody>
+          </table>
+        </div>
+
+        <div class="card span12">
+          <div class="ttl">Partner status board</div>
+          <table>
+            <thead><tr><th>Partner</th><th>Type</th><th>Status</th><th class="num">Onboard</th><th class="num">Deals</th><th class="num">Sourced</th><th>Health</th><th>Next milestone</th></tr></thead>
+            <tbody id="partnerRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================ CROSS-FUNCTIONAL ALIGNMENT ============================ -->
+    <section class="view" id="alignment">
+      <div class="grid g-12">
+        <div class="card span3">
+          <div class="ttl">Cross-functional alignment</div>
+          <div class="scorebar"><div class="health-num" style="color:var(--amber)">79<span class="unit">/100</span></div></div>
+          <div class="seg"><span style="flex:79;background:var(--green)"></span><span style="flex:21;background:var(--amber)"></span></div>
+          <div class="mini">Down 4 pts — RDMA decision blocking 3 teams</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Active cross-team deps</div>
+          <div class="big">34</div>
+          <div class="delta flat">7 blocked · 5 at risk</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">Avg slippage</div>
+          <div class="big sm" style="color:var(--amber)">6.2<span class="unit">days</span></div>
+          <div class="delta down">▲ 1.8d vs last month</div>
+        </div>
+        <div class="card span3">
+          <div class="ttl">On-time handoff rate</div>
+          <div class="big sm">81<span class="unit">%</span></div>
+          <div class="delta up">▲ 3 pts</div>
+        </div>
+
+        <div class="card span8">
+          <div class="ttl">Average slippage by function <span style="text-transform:none;color:var(--muted-2);font-weight:500">how many days a committed item slips, on average · this quarter</span></div>
+          <div class="chart-wrap tall"><canvas id="slipTrend"></canvas></div>
+        </div>
+        <div class="card span4">
+          <div class="ttl">Where slippage originates</div>
+          <div id="slipSource"></div>
+        </div>
+
+        <div class="card span7">
+          <div class="ttl">Dependency alignment matrix <span style="text-transform:none;color:var(--muted-2);font-weight:500">row depends on column · hover yellow/red</span></div>
+          <div id="matrix"></div>
+          <div class="legend">
+            <span><span class="dot g"></span>Aligned / on track</span>
+            <span><span class="dot y"></span>At risk</span>
+            <span><span class="dot r"></span>Blocked / slipping</span>
+          </div>
+        </div>
+        <div class="card span5">
+          <div class="ttl">Handoff health between teams</div>
+          <div id="handoffs"></div>
+        </div>
+
+        <div class="card span12">
+          <div class="ttl">Top cross-functional blockers <span style="text-transform:none;color:var(--muted-2);font-weight:500">hover the status for why it's slipping</span></div>
+          <table>
+            <thead><tr>
+              <th>Blocker</th><th>Owner</th><th>Blocking</th><th>Waiting team(s)</th><th class="num">Days slipped</th><th>Status</th><th>Needs</th>
+            </tr></thead>
+            <tbody id="blockerRows"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <div class="foot">Sample data prototype · built for the Chief of Staff operating system · refresh to re-render</div>
+  </main>
+</div>
+
+<script>
+/* ===================== OPEN ACCESS (no password) ===================== */
+// Sample/demo dashboard — renders charts on load.
+window.addEventListener('load', initCharts);
+
+/* ===================== NAVIGATION ===================== */
+function openView(id){
+  document.querySelectorAll('.view').forEach(x=>x.classList.remove('active'));
+  document.querySelectorAll('nav.tabs button').forEach(x=>x.classList.toggle('active', x.dataset.v===id));
+  const v=document.getElementById(id); if(v)v.classList.add('active');
+  const crumb=document.getElementById('crumb');
+  if(id==='portal'){ crumb.style.display='none'; }
+  else{
+    const btn=[...document.querySelectorAll('nav.tabs button')].find(x=>x.dataset.v===id);
+    document.getElementById('crumbNow').textContent=btn?btn.textContent.trim():'';
+    crumb.style.display='flex';
+  }
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+document.getElementById('tabs').addEventListener('click',e=>{
+  const b=e.target.closest('button'); if(!b)return;
+  openView(b.dataset.v);
+});
+
+/* ===================== SAMPLE DATA ===================== */
+function statusPill(s){const m={g:["g","On track"],y:["y","At risk"],r:["r","Slipping"]};const[c,t]=m[s];return `<span class="pill ${c}"><span class="dot ${c}"></span>${t}</span>`;}
+
+// 5 people, each with their top 5 projects. y/r carry a "why it's slipping" note.
+const people=[
+  {name:"Sarah",fn:"Engineering",color:"#27d796",projects:[
+    {p:"Inference latency v2",s:"g"},
+    {p:"Model serving autoscale",s:"g"},
+    {p:"GPU cost optimization",s:"y",why:"Cloud spend tracking 18% over budget. Can't right-size the cluster until the HPE / RDMA infra decision lands — that decision is sitting with Luke."},
+    {p:"Eval harness v3",s:"g"},
+    {p:"On-call rotation revamp",s:"g"}
+  ]},
+  {name:"Brad",fn:"Platform",color:"#4d9fff",projects:[
+    {p:"Multi-tenant rollout",s:"y",why:"Two stories blocked on the network spec, which is gated on the HPE / RDMA decision. Needs a named DRI before next sprint to avoid a second slip."},
+    {p:"Data pipeline migration",s:"g"},
+    {p:"SSO / SCIM provisioning",s:"r",why:"Third straight week slipped. Vendor integration stalled and there's no clear owner driving it day-to-day — accountability gap. Escalated; decision point set for Friday."},
+    {p:"Observability stack",s:"g"},
+    {p:"API gateway hardening",s:"y",why:"Scope grew mid-sprint; rate-limiting work was deprioritized to absorb an urgent security fix. On track to recover next week."}
+  ]},
+  {name:"Ian",fn:"Commercial",color:"#a98bff",projects:[
+    {p:"SLED productization",s:"g"},
+    {p:"Vail Phase 2 scoping",s:"g"},
+    {p:"Pricing model v2",s:"g"},
+    {p:"Partner co-sell motion",s:"y",why:"HPE onboarding is slow and the first joint deal has no target date until the RDMA infra path is confirmed. Knock-on from the same blocked decision."},
+    {p:"Reseller agreement",s:"g"}
+  ]},
+  {name:"Priya",fn:"Product",color:"#2fd3d8",projects:[
+    {p:"Wildfire dashboard GA",s:"g"},
+    {p:"Lightning-detection API",s:"g"},
+    {p:"Q3 roadmap planning",s:"y",why:"Two PRDs still unreviewed. Blocked waiting on engineering capacity estimates, which depend on the platform DRI question being resolved."},
+    {p:"Customer feedback loop",s:"g"},
+    {p:"Detection model eval",s:"r",why:"Deliverables off-brief on content alignment and low feedback receptivity across 12+ meeting notes. Owner is in a structured 30–60 day observation window; clear decision point set."}
+  ]},
+  {name:"Dana",fn:"Marketing",color:"#ffc24b",projects:[
+    {p:"Q2 demand gen",s:"y",why:"Pacing 88% to target. Two campaigns slipped and the Friday 5T5 came in late, so the number was stale at sync. Auto-nudge sent."},
+    {p:"Brand refresh",s:"g"},
+    {p:"Q3 event calendar",s:"g"},
+    {p:"Website relaunch",s:"r",why:"Agency has missed two deadlines; launch is now ~3 weeks behind. Needs a decision on whether to switch vendors — flagged to Luke this week."},
+    {p:"Analyst relations",s:"g"}
+  ]}
+];
+const chipTxt={g:"On track",y:"At risk",r:"Slipping"};
+function projChip(pr){
+  if(pr.s==='g') return `<span class="chip g">On track</span>`;
+  return `<span class="chip ${pr.s}">${chipTxt[pr.s]}<span class="tip"><b>Why it's ${pr.s==='r'?'slipping':'at risk'}:</b> ${pr.why}</span></span>`;
+}
+function personSummary(pr){
+  const g=pr.filter(x=>x.s==='g').length,y=pr.filter(x=>x.s==='y').length,r=pr.filter(x=>x.s==='r').length;
+  return `<div class="person-summary">
+    <span class="seg2" style="flex:${g||0.01};background:var(--green)"></span>
+    <span class="seg2" style="flex:${y||0.01};background:var(--amber)"></span>
+    <span class="seg2" style="flex:${r||0.01};background:var(--red)"></span></div>`;
+}
+document.getElementById('peopleGrid').innerHTML=people.map(p=>`
+  <div class="person">
+    <div class="person-hd">
+      <div class="avatar" style="background:${p.color}">${p.name[0]}</div>
+      <div><div class="nm">${p.name}</div><div class="fn">${p.fn}</div></div>
+    </div>
+    ${personSummary(p.projects)}
+    ${p.projects.map((pr,i)=>`
+      <div class="proj">
+        <div><div class="pname">${pr.p}</div><div class="pnum">P${i+1}</div></div>
+        ${projChip(pr)}
+      </div>`).join('')}
+  </div>`).join('');
+
+/* Sales funnel — each stage carries its top 5 customers for hover */
+const funnel=[
+  {n:"Discovery",v:"$1.92M",w:100,c:"var(--blue)",top:["Boulder County — $220K","Tahoe FD — $180K","Santa Fe — $160K","Flagstaff — $140K","Reno Metro — $120K"]},
+  {n:"Scoping / POC",v:"$1.31M",w:74,c:"var(--teal)",top:["Aspen County — $210K","Park City — $175K","Bend OR — $150K","Truckee Meadows — $130K","Missoula — $110K"]},
+  {n:"Proposal",v:"$0.96M",w:56,c:"var(--purple)",top:["Summit County — $190K","Durango — $150K","Mammoth Lakes — $130K","Ketchum — $110K","Jackson Hole — $95K"]},
+  {n:"Negotiation",v:"$0.43M",w:34,c:"var(--amber)",top:["Vail FD Phase 2 — $210K","Steamboat — $90K","Telluride — $70K","Sun Valley — $40K","Ouray — $20K"]},
+  {n:"Verbal / Closing",v:"$0.20M",w:20,c:"var(--green)",top:["Breckenridge — $110K","Whitefish — $55K","Leadville — $20K","Sandpoint — $15K"]}
+];
+document.getElementById('funnel').innerHTML=funnel.map(f=>`
+  <div class="funnel-row">
+    <div class="funnel-bar tipwrap" style="width:${f.w}%;background:${f.c}">${f.n}
+      <span class="tip"><b>Top accounts — ${f.n}</b>${f.top.map(t=>t).join('<br>')}</span>
+    </div>
+    <div class="funnel-meta">${f.v}</div>
+  </div>`).join('');
+
+/* Hygiene */
+const hygiene=[
+  {n:"Missing close date",v:6,bad:true},
+  {n:"No next step logged",v:4,bad:true},
+  {n:"Stale > 21 days",v:5,bad:true},
+  {n:"Missing deal owner",v:1,bad:true},
+  {n:"Amount populated",v:96,bad:false},
+  {n:"Contact role mapped",v:88,bad:false}
+];
+document.getElementById('hygiene').innerHTML=hygiene.map(h=>{
+  const pct = h.bad ? Math.min(h.v*6,100) : h.v;
+  const col = h.bad ? 'var(--red)' : 'var(--green)';
+  const val = h.bad ? h.v+' records' : h.v+'%';
+  return `<div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+    <span style="color:var(--muted)">${h.n}</span><b style="color:${col}">${val}</b></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${pct}%;background:${col}"></div></div></div>`;
+}).join('');
+
+/* Events */
+const events=[
+  {n:"RSA Conference",sp:"$118K",pi:"$520K",roi:"4.4x",att:340,mql:62,nps:"+48",v:"yes"},
+  {n:"GovTech Summit",sp:"$74K",pi:"$310K",roi:"4.2x",att:210,mql:41,nps:"+52",v:"yes"},
+  {n:"Wildfire Tech Expo",sp:"$46K",pi:"$280K",roi:"6.1x",att:130,mql:38,nps:"+61",v:"yes"},
+  {n:"AI Infra Forum",sp:"$92K",pi:"$190K",roi:"2.1x",att:180,mql:22,nps:"+33",v:"maybe"},
+  {n:"SLED Roundtable (owned)",sp:"$38K",pi:"$240K",roi:"6.3x",att:45,mql:19,nps:"+58",v:"yes"},
+  {n:"Dev Meetup Series",sp:"$54K",pi:"$70K",roi:"1.3x",att:95,mql:9,nps:"+21",v:"no"}
+];
+const recTxt={yes:"Run again",no:"Drop",maybe:"Re-scope"};
+document.getElementById('eventRows').innerHTML=events.map(e=>`
+  <tr><td><b>${e.n}</b></td><td class="num">${e.sp}</td><td class="num">${e.pi}</td>
+  <td class="num" style="color:${parseFloat(e.roi)>=3?'var(--green)':parseFloat(e.roi)>=2?'var(--amber)':'var(--red)'}"><b>${e.roi}</b></td>
+  <td class="num">${e.att}</td><td class="num">${e.mql}</td><td>${e.nps}</td>
+  <td><span class="rec ${e.v}">${recTxt[e.v]}</span></td></tr>`).join('');
+
+/* Hiring */
+const depts=[
+  {d:"Engineering",o:5,p:23,tto:"27d",ret:"94%",h:"g"},
+  {d:"Sales / GTM",o:3,p:14,tto:"31d",ret:"88%",h:"y"},
+  {d:"Product",o:1,p:6,tto:"29d",ret:"100%",h:"g"},
+  {d:"Marketing",o:2,p:8,tto:"40d",ret:"83%",h:"y"},
+  {d:"G&A / Finance",o:1,p:4,tto:"22d",ret:"100%",h:"g"},
+  {d:"People / HR",o:1,p:3,tto:"25d",ret:"100%",h:"g"},
+  {d:"Security",o:1,p:5,tto:"38d",ret:"90%",h:"r"}
+];
+document.getElementById('hireRows').innerHTML=depts.map(d=>`
+  <tr><td><b>${d.d}</b></td><td class="num">${d.o}</td><td class="num">${d.p}</td><td class="num">${d.tto}</td>
+  <td class="num">${d.ret}</td><td>${statusPill(d.h)}</td></tr>`).join('');
+
+const hireFunnel=[
+  {n:"Applied",v:"100%",w:100,c:"var(--blue)"},
+  {n:"Recruiter screen",v:"42%",w:60,c:"var(--teal)"},
+  {n:"Tech screen",v:"24%",w:42,c:"var(--purple)"},
+  {n:"Onsite loop",v:"12%",w:28,c:"var(--amber)"},
+  {n:"Offer",v:"7%",w:16,c:"var(--green)"}
+];
+document.getElementById('hireFunnel').innerHTML=hireFunnel.map(f=>`
+  <div class="funnel-row"><div class="funnel-bar" style="width:${f.w}%;background:${f.c}">${f.n}</div>
+  <div class="funnel-meta">${f.v}</div></div>`).join('');
+
+const kudos=[
+  {p:false,from:"Ian → Sarah",t:"Sarah jumped on the live fire test with Vail FD on a Saturday and rebuilt the latency path on the spot. Lighthouse account is live because of her."},
+  {p:true,from:"Luke → Whole team",t:"We collapsed the seed-round NDA audit from days to hours. Huge unlock — that's what an AI-leveraged ops function looks like."},
+  {p:false,from:"Priya → Recruiting",t:"Principal PMTS offer out in ONE week from role-open. Our new recruiter is a machine."},
+  {p:true,from:"Matt W. → Ops",t:"The SLED playbook turned one account into a repeatable ~$500K/municipality motion. Game-changer for the pipeline."},
+  {p:false,from:"Tom → Nadia",t:"Comp framework v2 shipped early and made the leveling conversation painless. Thank you."}
+];
+document.getElementById('kudosWall').innerHTML=kudos.map(k=>`
+  <div class="kudos ${k.p?'praise':''}"><div class="from"><b>${k.from.split(' → ')[0]}</b> → ${k.from.split(' → ')[1]}</div>
+  <div class="txt">"${k.t}"</div></div>`).join('');
+
+/* Partners */
+const deals=[
+  {n:"Vail Phase 2",pt:"Vail FD",v:"$500K",st:"Negotiation",c:"y"},
+  {n:"Lightning API",pt:"ProHawk",v:"$180K",st:"Closing",c:"g"},
+  {n:"RDMA infra",pt:"HPE",v:"$240K",st:"Scoping",c:"b"},
+  {n:"Detection node",pt:"Vaidio",v:"$95K",st:"Closed-won",c:"g"},
+  {n:"County rollout",pt:"GovPartner",v:"$320K",st:"Proposal",c:"b"}
+];
+const stagePill={g:"g",y:"y",b:"b",r:"r"};
+document.getElementById('dealRows').innerHTML=deals.map(d=>`
+  <tr><td><b>${d.n}</b></td><td style="color:var(--muted)">${d.pt}</td><td class="num">${d.v}</td>
+  <td><span class="pill ${stagePill[d.c]}">${d.st}</span></td></tr>`).join('');
+
+const partners=[
+  {n:"ProHawk",ty:"Tech",st:"Active",on:"32d",dl:3,src:"$420K",h:"g",ms:"Co-sell QBR Jun 18"},
+  {n:"Vaidio",ty:"Tech",st:"Active",on:"41d",dl:2,src:"$310K",h:"g",ms:"Joint demo build"},
+  {n:"HPE",ty:"Strategic",st:"Onboarding",on:"—",dl:0,src:"$240K",h:"y",ms:"RDMA infra decision",why:"Onboarding stalled — the first joint deal is gated on the RDMA/HPE infra decision sitting with Luke. No target date until it lands."},
+  {n:"GovPartner",ty:"Channel",st:"Active",on:"55d",dl:4,src:"$680K",h:"g",ms:"County rollout SOW"},
+  {n:"AWS SLED",ty:"Channel",st:"Active",on:"60d",dl:2,src:"$290K",h:"g",ms:"Marketplace listing"},
+  {n:"FireWatch Co",ty:"Channel",st:"Watch",on:"88d",dl:1,src:"$70K",h:"y",ms:"Re-engage exec sponsor",why:"Only one deal in 88 days and the exec sponsor has gone quiet. Slow onboarding vs. peers — needs a re-engagement plan or a decision to deprioritize."},
+  {n:"DataBridge",ty:"Tech",st:"At risk",on:"—",dl:0,src:"$0",h:"r",ms:"No activity 60d — review fit",why:"No activity in 60 days, zero sourced pipeline, and never completed onboarding. Reviewing whether the technical fit justifies keeping it active."},
+  {n:"Meridian Gov",ty:"Strategic",st:"At risk",on:"—",dl:0,src:"$0",h:"r",ms:"Stalled in legal",why:"Stuck in legal review for weeks with no movement and no sourced pipeline. Needs an escalation to unblock or a decision to pause."}
+];
+document.getElementById('partnerRows').innerHTML=partners.map(p=>{
+  const statusCell = p.why
+    ? `<span class="tipwrap"><span class="pill ${p.h}">${p.st}</span><span class="tip"><b>Why ${p.st.toLowerCase()}:</b> ${p.why}</span></span>`
+    : `<span class="pill ${p.h}">${p.st}</span>`;
+  return `<tr><td><b>${p.n}</b></td><td style="color:var(--muted)">${p.ty}</td>
+  <td>${statusCell}</td><td class="num">${p.on}</td><td class="num">${p.dl}</td>
+  <td class="num">${p.src}</td><td>${statusPill(p.h)}</td><td style="color:var(--muted);font-size:12px">${p.ms}</td></tr>`;
+}).join('');
+
+/* ===================== CROSS-FUNCTIONAL ALIGNMENT ===================== */
+const fns=["Eng","Product","Sales","Mktg","GNA"];
+// matrix[row][col]: how aligned ROW is with what it depends on from COL. null = self.
+const matrix=[
+  // depends on: Eng, Product, Sales, Mktg, GNA
+  [null,"g","g","g","y|GNA is slow to close the PEO/HRIS selection, which gates eng onboarding capacity planning."], // Eng
+  ["y|Product roadmap is waiting on eng capacity estimates that hinge on the unresolved RDMA/HPE infra decision.",null,"g","g","g"], // Product
+  ["r|Sales municipal deals are blocked on the platform multi-tenant rollout, which slipped on the RDMA decision.","g",null,"y|Demand-gen leads are pacing 88%; late Friday 5T5 left Sales without fresh MQLs at handoff.","g"], // Sales
+  ["g","g","g",null,"g"], // Mktg
+  ["g","g","g","g",null]  // GNA
+];
+function matrixCell(v){
+  if(v===null) return `<td><div class="cell self"></div></td>`;
+  if(v==="g") return `<td><div class="cell g">●</div></td>`;
+  const [s,why]=v.split("|");
+  const lbl=s==="r"?"Blocked":"At risk";
+  return `<td><div class="cell ${s}">${s==="r"?"▲":"●"}<span class="tip"><b>${lbl}</b>${why}</span></div></td>`;
+}
+(function buildMatrix(){
+  let html='<table class="matrix"><thead><tr><th class="row-h"></th>'+fns.map(f=>`<th>${f}</th>`).join('')+'</tr></thead><tbody>';
+  matrix.forEach((row,i)=>{ html+=`<tr><th class="row-h">${fns[i]}</th>`+row.map(matrixCell).join('')+'</tr>'; });
+  html+='</tbody></table>';
+  document.getElementById('matrix').innerHTML=html;
+})();
+
+// where slippage originates
+const slipSource=[
+  {n:"Platform / infra decisions",pct:38,c:"var(--red)"},
+  {n:"Eng capacity / sequencing",pct:24,c:"var(--amber)"},
+  {n:"GNA / finance gating",pct:18,c:"var(--amber)"},
+  {n:"Marketing → Sales handoff",pct:12,c:"var(--blue)"},
+  {n:"Other",pct:8,c:"var(--muted-2)"}
+];
+document.getElementById('slipSource').innerHTML=slipSource.map(s=>`
+  <div style="margin-bottom:11px"><div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:5px">
+    <span style="color:var(--muted)">${s.n}</span><b>${s.pct}%</b></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${s.pct}%;background:${s.c}"></div></div></div>`).join('');
+
+// handoff health
+const handoffs=[
+  {n:"Product → Eng",pct:74,c:"y"},
+  {n:"Eng → Sales (delivery)",pct:62,c:"r"},
+  {n:"Sales → CS/Onboarding",pct:91,c:"g"},
+  {n:"Marketing → Sales (MQLs)",pct:79,c:"y"},
+  {n:"Eng → GNA (compliance)",pct:88,c:"g"}
+];
+const hcol={g:"var(--green)",y:"var(--amber)",r:"var(--red)"};
+document.getElementById('handoffs').innerHTML=handoffs.map(h=>`
+  <div style="margin-bottom:13px"><div style="display:flex;justify-content:space-between;font-size:12.5px;margin-bottom:5px">
+    <span>${h.n}</span><b style="color:${hcol[h.c]}">${h.pct}% on time</b></div>
+    <div class="bar-track"><div class="bar-fill" style="width:${h.pct}%;background:${hcol[h.c]}"></div></div></div>`).join('');
+
+// top blockers
+const blockers=[
+  {b:"RDMA / HPE infra decision",o:"Awaiting Luke",blk:"Multi-tenant rollout, GPU sizing, partner co-sell",wt:"Eng · Product · Commercial",d:14,s:"r",why:"One unresolved infra decision is cascading into three teams. Until the RDMA path is confirmed, eng can't size the cluster, platform can't unblock two stories, and the HPE co-sell has no deal date.",need:"CEO decision"},
+  {b:"Multi-tenant rollout",o:"Brad",blk:"Sales municipal deals",wt:"Sales",d:9,s:"r",why:"Two platform stories blocked on the network spec (gated by RDMA). Sales municipal opportunities can't progress to delivery without it. Needs a named DRI.",need:"Named DRI"},
+  {b:"PEO + HRIS selection",o:"Tom (GNA)",blk:"Eng onboarding capacity model",wt:"Eng",d:5,s:"y",why:"ADP vs Workday decision is open; bank-access and month-end close blockers are slowing it. Eng can't finalize hiring capacity planning until the HRIS path is set.",need:"Vendor pick"},
+  {b:"Friday 5T5 → MQL handoff",o:"Dana (Mktg)",blk:"Sales pipeline freshness",wt:"Sales",d:3,s:"y",why:"Late Friday 5T5 meant Sales started the week without fresh MQLs. Demand-gen pacing 88%; handoff cadence needs to move earlier in the week.",need:"Earlier cadence"},
+  {b:"Q3 roadmap sign-off",o:"Priya (Product)",blk:"Eng sprint planning",wt:"Eng",d:6,s:"y",why:"Two PRDs unreviewed, blocked on eng capacity estimates that depend on the infra decision. Knock-on from the same root blocker.",need:"Capacity input"}
+];
+const needPill=s=>s==="r"?'<span class="pill r"><span class="dot r"></span>Blocked</span>':'<span class="pill y"><span class="dot y"></span>At risk</span>';
+document.getElementById('blockerRows').innerHTML=blockers.map(b=>{
+  const st=`<span class="has-tip">${needPill(b.s)}<span class="tip"><b>Why it's slipping:</b> ${b.why}</span></span>`;
+  return `<tr><td><b>${b.b}</b></td><td style="color:var(--muted)">${b.o}</td><td style="color:var(--muted);font-size:12px">${b.blk}</td>
+  <td style="font-size:12px">${b.wt}</td><td class="num" style="color:${b.d>=9?'var(--red)':'var(--amber)'};font-weight:700">${b.d}d</td>
+  <td>${st}</td><td><span class="pill b">${b.need}</span></td></tr>`;
+}).join('');
+
+/* Top-10 accounts per quarter (for the goal-vs-actual hover) */
+const qTop={
+  Q1:['Vail FD — $182K','Aspen County — $121K','Truckee Meadows — $96K','Flagstaff — $78K','Reno Metro — $64K','Boulder County — $58K','Santa Fe — $52K','Bend OR — $44K','Park City — $41K','Durango — $36K'],
+  Q2:['Vail Phase 2 — $210K','GovPartner County — $148K','Summit County — $92K','Steamboat — $71K','Telluride — $63K','Mammoth Lakes — $55K','Ketchum — $48K','Missoula — $42K','Jackson Hole — $39K','Whitefish — $31K'],
+  Q3:['County rollout (fcst) — $320K','AWS SLED marketplace — $180K','Breckenridge — $110K','Tahoe FD — $95K','Sun Valley — $70K','Coeur d\'Alene — $58K','Ski Utah consortium — $52K','Ouray — $40K','Sandpoint — $33K','Leadville — $27K'],
+  Q4:['Statewide pilot (fcst) — $260K','Regional expansion — $140K','New logo pipeline — $90K','Renewals uplift — $65K','(forecast — light coverage)']
+};
+
+/* ===================== CHARTS ===================== */
+let charted=false;
+function initCharts(){
+  if(charted)return; charted=true;
+  Chart.defaults.color='#8a98b8';
+  Chart.defaults.font.family="-apple-system,Segoe UI,Inter,sans-serif";
+  Chart.defaults.font.size=11;
+  const grid={color:'rgba(38,50,79,.55)'};
+  const noGrid={display:false};
+
+  new Chart(execTrend,{type:'bar',
+    data:{labels:['W1','W2','W3','W4','W5','W6','W7','W8','W9','W10','W11','W12'],
+      datasets:[
+       {label:'Executed',data:[19,22,20,24,21,25,23,26,24,22,20,23],backgroundColor:'#27d796',stack:'s',borderRadius:3},
+       {label:'Slipped',data:[5,4,6,5,7,5,6,4,7,8,9,9],backgroundColor:'#ffc24b',stack:'s',borderRadius:3}
+      ]},
+    options:{plugins:{legend:{display:true,labels:{boxWidth:10,usePointStyle:true}},
+      tooltip:{callbacks:{afterBody:items=>{const t=items.reduce((a,b)=>a+b.raw,0);const ex=items.find(i=>i.dataset.label==='Executed');return ex?['','On-time rate: '+Math.round(ex.raw/t*100)+'%']:[];}}}},
+      scales:{x:{stacked:true,grid:noGrid},y:{stacked:true,grid,title:{display:true,text:'committed items'},min:0}},maintainAspectRatio:false}});
+
+  new Chart(quarterGoal,{type:'bar',
+    data:{labels:['Q1','Q2','Q3','Q4'],
+      datasets:[
+        {label:'Goal',data:[800,950,1100,1150],backgroundColor:'#26324f',borderRadius:6},
+        {label:'Actual / forecast',data:[832,840,880,520],backgroundColor:['#27d796','#ffc24b','#ffc24b','#4d9fff'],borderRadius:6}
+      ]},
+    options:{plugins:{legend:{labels:{boxWidth:10,usePointStyle:true}},
+      tooltip:{callbacks:{afterBody:items=>{const q=items[0].label;const l=qTop[q]||[];return ['','Top 10 accounts:'].concat(l.map(a=>'• '+a));}}}},
+      scales:{y:{grid,ticks:{callback:v=>'$'+v+'K'}},x:{grid:noGrid}},maintainAspectRatio:false}});
+
+  const recColor={yes:'#27d796',maybe:'#ffc24b',no:'#ff5c7a'};
+  new Chart(eventRoi,{type:'bar',
+    data:{labels:events.map(e=>e.n.replace(' (owned)','')),
+      datasets:[{label:'ROI (x)',data:events.map(e=>parseFloat(e.roi)),
+        backgroundColor:events.map(e=>recColor[e.v]),borderRadius:5}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>'ROI '+c.raw+'x',afterLabel:c=>{const e=events[c.dataIndex];return e.pi+' pipeline ÷ '+e.sp+' spend';}}}},
+      scales:{x:{grid,title:{display:true,text:'ROI multiple (pipeline ÷ spend)'},min:0},y:{grid:noGrid}},maintainAspectRatio:false}});
+
+  new Chart(eventAtt,{type:'bar',
+    data:{labels:events.map(e=>e.n.split(' ')[0]),
+      datasets:[
+        {label:'Actual',data:events.map(e=>e.att),backgroundColor:'#4d9fff',borderRadius:5},
+        {label:'Target',data:[300,200,120,200,40,140],backgroundColor:'#26324f',borderRadius:5}
+      ]},
+    options:{indexAxis:'y',plugins:{legend:{labels:{boxWidth:10,usePointStyle:true}}},
+      scales:{x:{grid},y:{grid:noGrid}},maintainAspectRatio:false}});
+
+  new Chart(hcGrowth,{type:'line',
+    data:{labels:['Jul','Sep','Nov','Jan','Mar','May'],
+      datasets:[
+        {label:'Engineering',data:[18,22,26,29,33,38],borderColor:'#27d796',tension:.4,pointRadius:0,borderWidth:2},
+        {label:'GTM',data:[8,10,13,15,18,21],borderColor:'#4d9fff',tension:.4,pointRadius:0,borderWidth:2},
+        {label:'G&A + others',data:[6,7,9,11,13,15],borderColor:'#a98bff',tension:.4,pointRadius:0,borderWidth:2}
+      ]},
+    options:{plugins:{legend:{labels:{boxWidth:10,usePointStyle:true}}},
+      scales:{y:{grid},x:{grid:noGrid}},maintainAspectRatio:false}});
+
+  new Chart(slipTrend,{type:'bar',
+    data:{labels:['Sales','Engineering','Product','G&A','Marketing'],
+      datasets:[{label:'Avg days slipped',data:[8.4,6.1,4.7,3.9,3.2],
+        backgroundColor:['#ff5c7a','#ffc24b','#ffc24b','#27d796','#27d796'],borderRadius:6}]},
+    options:{indexAxis:'y',plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:c=>c.raw+' days average slip · company avg 5.3d'}}},
+      scales:{x:{grid,title:{display:true,text:'avg days a committed item slips'},min:0},y:{grid:noGrid}},maintainAspectRatio:false}});
+
+  new Chart(partnerOnboard,{type:'bar',
+    data:{labels:['ProHawk','Vaidio','GovPartner','AWS SLED','FireWatch','HPE*'],
+      datasets:[{label:'Days to first deal',data:[32,41,55,60,88,null],
+        backgroundColor:['#27d796','#27d796','#27d796','#ffc24b','#ff5c7a','#26324f'],borderRadius:6}]},
+    options:{plugins:{legend:{display:false},tooltip:{callbacks:{label:c=>c.raw?c.raw+' days':'in onboarding'}}},
+      scales:{y:{grid,title:{display:true,text:'days'}},x:{grid:noGrid}},maintainAspectRatio:false}});
+}
+</script>
+</body>
+</html>
